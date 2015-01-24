@@ -1,2 +1,3 @@
-cloud/main.js
+cloud/api.js
 config/global.json
+run.sh
