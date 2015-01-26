@@ -1,108 +1,98 @@
+var _ = require('underscore');
 var api = require('cloud/api.js');
-
-// Use Parse.Cloud.define to define as many cloud functions as you want.
-// For example:
-Parse.Cloud.define("hello", function(request, response) {
-  response.success("Hello world!");
-});
+var ET = require('cloud/et.js').ET;
 
 var WeatherDataObj = Parse.Object.extend("WeatherData");
 
-var SEC_IN_MILLIS = 1000;
-var MIN_IN_MILLIS = SEC_IN_MILLIS * 60;
-var HOUR_IN_MILLIS = MIN_IN_MILLIS * 60;
-var DAY_IN_MILLIS = HOUR_IN_MILLIS * 24;
-var MOON_IN_MILLIS = DAY_IN_MILLIS * 32;
-var YEAR_IN_MILLIS = MOON_IN_MILLIS * 12;
+//
+// <year>-<moon>-<day>-<hour>-<area>
+//
+var generateWeatherId = function (weatherObj) {
+  return [weatherObj.start_et_year,
+          weatherObj.start_et_moon,
+          weatherObj.start_et_day,
+          weatherObj.start_et_hour,
+          weatherObj.start_et_area].join('-');
+};
 
-var calcEorzeaTime = function (ltMillis) {
-  var etMillis = ltMillis * 3600 / 175;
-  var etMinute = Math.floor(etMillis / MIN_IN_MILLIS) % 60;
-  var etHour = Math.floor(etMillis / HOUR_IN_MILLIS) % 24;
-  var etDay = Math.floor(etMillis / DAY_IN_MILLIS) % 32;
-  var etMoon = Math.floor(etMillis / MOON_IN_MILLIS) % 12;
-  var etYear = Math.floor(etMillis / YEAR_IN_MILLIS);
-  return {
-    minute: etMinute,
-    hour: etHour,
-    day: etDay,
-    moon: etMoon,
-    year: etYear
-  }
-}
-
-var calcStartTime = function(et, shiftHour) {
-  shiftHour = shiftHour !== undefined ? shiftHour : 0;
-  var hour = et.hour + shiftHour;
-  while (hour < 0) {
-    hour += 24;
-  }
-  hour = hour - hour % 8;
-
-  return {
-    minute: 0,
-    hour: hour,
-    day: et.day,
-    moon: et.moon,
-    year: et.year
-  }
-}
-
-var calcStartHour = function (hour) {
-  while (hour < 0) {
-    hour += 24;
-  }
-  return hour - hour % 8;
+var fetchPastData = function (time) {
+  var query = new Parse.Query(WeatherDataObj);
+  query.greaterThan('start_et_time', time);
+  query.limit(150); // > 24 * 5
+  return query.find().then(
+    function(pastDataList) { // success
+      var result = {};
+      for (var i = 0, l = pastDataList.length; i < l; i++) {
+        var pastData = pastDataList[i]
+        var id = generateWeatherId(pastData)
+        result[id] = pastData;
+      }
+      return Parse.Promise.as(result);
+    });
 };
 
 var crawl = function (success, error) {
   api.get(function (obj) {
     var dataList = obj.dataList;
-    var hour = obj.hour;
-    var time = new Date().getTime();
+    if (dataList.length !== 24 * 5) {
+      console.log('not full data : data.length = ' + dataList.length);
+    }
 
-    var curET = calcEorzeaTime(time);
+    var hour = obj.hour;
+    var curLT = new Date();
+    var curET = new ET().setNow();
     if (curET.hour !== hour) {
       error('hour is not matched : curET.hour = ' + curET.hour + ', hour = ' + hour);
       return;
     }
 
-    var baseStartHour = calcStartHour(hour);
+    var startBaseET = curET.calcStartET();
+    var startEtList = [
+      new ET().setEtMillis(startBaseET.time - ET.HOUR_IN_MILLIS * 8),
+      startBaseET,
+      new ET().setEtMillis(startBaseET.time + ET.HOUR_IN_MILLIS * 8),
+      new ET().setEtMillis(startBaseET.time + ET.HOUR_IN_MILLIS * 8 * 2),
+      new ET().setEtMillis(startBaseET.time + ET.HOUR_IN_MILLIS * 8 * 3),
+    ];
 
-    if (dataList.length !== 24 * 5) {
-      console.log('not full data : data.length = ' + dataList.length);
-    }
+    fetchPastData(startEtList[0].time).then(function(pastData) {
+      var promises = [];
+      _.each(dataList, function(data) {
+        var area = data.area;
+        var weather = data.weather;
+        var startET = startEtList[data.time + 1];
 
-    for (var i = 0, l = dataList.length; i < l; i++) {
-      var data = dataList[i];
-      var area = +data.area;
-      var weather = +data.weather;
-      var startHour = calcStartHour(baseStartHour + data.time * 8);
+        var weatherData = new WeatherDataObj();
+        weatherData.set('area', area);
+        weatherData.set('weather', weather);
+        // weather start et time
+        weatherData.set('start_et_year', startET.year);
+        weatherData.set('start_et_moon', startET.moon);
+        weatherData.set('start_et_day', startET.day);
+        weatherData.set('start_et_hour', startET.hour);
+        weatherData.set('start_et_time', startET.time);
+        // lt epoch time
+        weatherData.set('fetched_lt_time', curLT.getTime());
 
-      var weatherData = new WeatherDataObj();
-      weatherData.set('area', area);
-      weatherData.set('weather', weather);
-      weatherData.set('start_hour', startHour);
-      // weather start et time
-      // fetched ET time
-      weatherData.set('fetched_et_year', curET.year);
-      weatherData.set('fetched_et_moon', curET.moon);
-      weatherData.set('fetched_et_day', curET.day);
-      weatherData.set('fetched_et_hour', curET.hour);
-      weatherData.set('fetched_et_minute', curET.minute);
-      // lt epoch time
-      weatherData.set('fetched_lt_time', time);
+        var id = generateWeatherId(weatherData);
+        if (pastData[id] === undefined) {
+          promises.push(weatherData.save());
+        } else {
+          if (pastData[id].weather !== weatherData.weather) {
+            console.log('find different weather : ' + pastData[id].weather +
+                        ' !== ' + weatherData.weather);
+          }
+        }
+      }); // _.each
+      return Parse.Promise.when(promises);
+    }).then(function () {
+      success();
+      return;
+    }, function (err) {
+      error(err);
+      return;
+    });
 
-      /*
-      watherData.save(null, {
-      error: function (data, error) {
-      console.error('Failed to create new object, with error code: ' + error.message);
-      }
-      });
-      */
-    }
-
-    success();
   }, error);
 }
 
@@ -111,7 +101,7 @@ var crawlBase = function (request, responseOrStatus) {
     responseOrStatus.success('success');
   }, function (msg) {
     console.error(msg);
-    //console.err('Request failed with response code ' + httpResponse.status);
+    responseOrStatus.error();
   });
 }
 
