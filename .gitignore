@@ -1,3 +1,5 @@
+.DS_Store
+
 cloud/api.js
 config/global.json
 run.sh
