@@ -8,11 +8,11 @@ var WeatherDataObj = Parse.Object.extend("WeatherData");
 // <year>-<moon>-<day>-<hour>-<area>
 //
 var generateWeatherId = function (weatherObj) {
-  return [weatherObj.start_et_year,
-          weatherObj.start_et_moon,
-          weatherObj.start_et_day,
-          weatherObj.start_et_hour,
-          weatherObj.start_et_area].join('-');
+  return [weatherObj.get('start_et_year'),
+          weatherObj.get('start_et_moon'),
+          weatherObj.get('start_et_day'),
+          weatherObj.get('start_et_hour'),
+          weatherObj.get('area')].join('-');
 };
 
 var fetchPastData = function (time) {
@@ -23,8 +23,8 @@ var fetchPastData = function (time) {
     function(pastDataList) { // success
       var result = {};
       for (var i = 0, l = pastDataList.length; i < l; i++) {
-        var pastData = pastDataList[i]
-        var id = generateWeatherId(pastData)
+        var pastData = pastDataList[i];
+        var id = generateWeatherId(pastData);
         result[id] = pastData;
       }
       return Parse.Promise.as(result);
@@ -78,9 +78,9 @@ var crawl = function (success, error) {
         if (pastData[id] === undefined) {
           promises.push(weatherData.save());
         } else {
-          if (pastData[id].weather !== weatherData.weather) {
-            console.log('find different weather : ' + pastData[id].weather +
-                        ' !== ' + weatherData.weather);
+          if (pastData[id].get('weather') !== weatherData.get('weather')) {
+            console.log('find different weather : ' + pastData[id].get('weather') +
+                        ' !== ' + weatherData.get('weather'));
           }
         }
       }); // _.each
