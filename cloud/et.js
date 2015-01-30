@@ -31,7 +31,7 @@ ET.prototype.calcStartET = function () {
   var pastMillis = SEC_IN_MILLIS * this.second +
                    MIN_IN_MILLIS * this.minute +
                    HOUR_IN_MILLIS * (this.hour % 8);
-  return new ET().setEtMillis(this.time -pastMillis);
+  return new ET().setEtMillis(this.time - pastMillis);
 };
 
 exports.ET = ET;

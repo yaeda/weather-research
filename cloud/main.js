@@ -27,6 +27,7 @@ var fetchPastData = function (time) {
         var id = generateWeatherId(pastData);
         result[id] = pastData;
       }
+      console.log('find #' + pastDataList.length + ' past data');
       return Parse.Promise.as(result);
     });
 };
@@ -84,6 +85,7 @@ var crawl = function (success, error) {
           }
         }
       }); // _.each
+      console.log('save #' + promises.length + ' data');
       return Parse.Promise.when(promises);
     }).then(function () {
       success();
