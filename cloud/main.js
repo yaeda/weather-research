@@ -109,3 +109,53 @@ var crawlBase = function (request, responseOrStatus) {
 
 Parse.Cloud.define('crawl', crawlBase);
 Parse.Cloud.job('fetch', crawlBase);
+
+//
+// cleanup
+//
+var cleanup = function (area, success, error) {
+  var query = new Parse.Query(WeatherDataObj);
+  if (area !== undefined) {
+    query.equalTo('area', area);
+  }
+  query.limit(1000);
+  query.find().then(
+    function(pastDataList) { // success
+      var removed = 0;
+      var result = {};
+      var promises = [];
+      for (var i = 0, l = pastDataList.length; i < l; i++) {
+        var pastData = pastDataList[i];
+        var id = generateWeatherId(pastData);
+        if (result[id] === undefined) {
+          result[id] = pastData;
+        } else {
+          if (result[id].get('weather') === pastData.get('weather')) {
+            promises.push(pastData.destroy());
+            removed++;
+          } else {
+            console.log('duplication found !')
+            console.log(result[id].get('weather') + ' and ' + pastData.get('weather'));
+          }
+        }
+      }
+      console.log('find #' + pastDataList.length + ' past data');
+      console.log('remove #' + removed);
+      return Parse.Promise.when(promises);
+    }).then(function () {
+      success();
+      return;
+    })
+}
+
+var cleanupJobOrDefine = function (request, responseOrStatus) {
+  var area = request.params.area;
+  cleanup(area, function () {
+    responseOrStatus.success('success');
+  }, function () {
+    responseOrStatus.error();
+  });
+}
+
+Parse.Cloud.define('cleanup', cleanupJobOrDefine);
+Parse.Cloud.job('cleanup', cleanupJobOrDefine);
