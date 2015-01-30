@@ -17,7 +17,7 @@ var generateWeatherId = function (weatherObj) {
 
 var fetchPastData = function (time) {
   var query = new Parse.Query(WeatherDataObj);
-  query.greaterThan('start_et_time', time);
+  query.greaterThanOrEqualTo('start_et_time', time);
   query.limit(150); // > 24 * 5
   return query.find().then(
     function(pastDataList) { // success
