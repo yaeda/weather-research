@@ -56,7 +56,7 @@ var crawl = function (success, error) {
       new ET().setEtMillis(startBaseET.time + ET.HOUR_IN_MILLIS * 8 * 3),
     ];
 
-    fetchPastData(startEtList[0].time).then(function(pastData) {
+    fetchPastData(startEtList[0].time - ET.SEC_IN_MILLIS).then(function(pastData) {
       var promises = [];
       _.each(dataList, function(data) {
         var area = data.area;
