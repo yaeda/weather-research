@@ -2,4 +2,7 @@
 
 cloud/api.js
 config/global.json
-run.sh
+
+,
+node_modules
+public/bower_components
