@@ -1,0 +1,92 @@
+ol {
+  list-style: none;
+}
+
+ol > li {
+  float: left;
+  width: 32px;
+  height: 32px;
+  border: 1px dotted gray;
+}
+
+ol > li:nth-child(5n+1) {
+  clear: both;
+}
+
+.icon-weather {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+}
+
+.icon-weather-1 {
+  background-image: url('../images/weather_icon_01.png');
+}
+
+.icon-weather-2 {
+  background-image: url('../images/weather_icon_02.png');
+}
+
+.icon-weather-3 {
+  background-image: url('../images/weather_icon_03.png');
+}
+
+.icon-weather-4 {
+  background-image: url('../images/weather_icon_04.png');
+}
+
+.icon-weather-5 {
+  background-image: url('../images/weather_icon_05.png');
+}
+
+.icon-weather-6 {
+  background-image: url('../images/weather_icon_06.png');
+}
+
+.icon-weather-7 {
+  background-image: url('../images/weather_icon_07.png');
+}
+
+.icon-weather-8 {
+  background-image: url('../images/weather_icon_08.png');
+}
+
+.icon-weather-9 {
+  background-image: url('../images/weather_icon_09.png');
+}
+
+.icon-weather-10 {
+  background-image: url('../images/weather_icon_10.png');
+}
+
+.icon-weather-11 {
+  background-image: url('../images/weather_icon_11.png');
+}
+
+.icon-weather-12 {
+  background-image: url('../images/weather_icon_12.png');
+}
+
+.icon-weather-13 {
+  background-image: url('../images/weather_icon_13.png');
+}
+
+.icon-weather-14 {
+  background-image: url('../images/weather_icon_14.png');
+}
+
+.icon-weather-15 {
+  background-image: url('../images/weather_icon_15.png');
+}
+
+.icon-weather-16 {
+  background-image: url('../images/weather_icon_16.png');
+}
+
+.icon-weather-17 {
+  background-image: url('../images/weather_icon_17.png');
+}
+
+.icon-weather-18 {
+  background-image: url('../images/weather_icon_18.png');
+}
