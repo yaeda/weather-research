@@ -4,9 +4,10 @@ define([
   'models/Weather',
   'collections/WeatherList',
   'views/WeatherList',
+  'views/WeatherGraph',
   'utils/et'
 ],
-function(Backbone, Parse, Weather, WeatherList, WeatherListView, ET) {
+function(Backbone, Parse, Weather, WeatherList, WeatherListView, WeatherGraphView, ET) {
   "use strict";
 
   // External dependencies
@@ -20,6 +21,7 @@ function(Backbone, Parse, Weather, WeatherList, WeatherListView, ET) {
 
     index: function () {
       new WeatherListView();
+      new WeatherGraphView();
     }
   });
 
